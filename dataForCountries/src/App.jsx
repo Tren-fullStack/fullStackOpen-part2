@@ -1,101 +1,83 @@
 import {useState, useEffect} from 'react'
 import countryService from './services/countries'
-
-//html display of search bar
-const CountrySearch = ({value, onChange}) => {
-  return (
-  <div>
-    find countries: <input type='text' value={value} onChange={onChange} id='countryInput'></input>
-  </div>
-  )
-}
-
-//html display when too many countries fit search criteria
-const TooMany = () => {
-  return(
-  <div>
-    Too many matches, specify another filter
-  </div>
-  )
-}
-
-const CountryList = ({ countries }) => {  
-  return(
-    countries.map(country => 
-      <div key={country}>
-        <li>{country}</li>
-      </div>
-    )
-  )
-}
-
-const CapitalArea = ({ indexData,countryName }) => {
-  return(
-    <div>
-      <h1>{countryName}</h1>
-      <p>Capital: {indexData.capital}</p>
-      <p>Area: {indexData.area}</p>
-      <h3>languages:</h3>
-    </div>
-  )
-}
-
-const Languages = ({ languages }) => {
-  return(
-    //languages are in dict, therefore must use this map method
-    Object.entries(languages).map( ([key,lang]) =>
-      <div>
-        <li>{lang}</li>
-      </div>
-    )
-  )
-}
-
-const Flag = ({ flagImage, countryName }) => {
-  //alt text incase flag does not dispay
-  const altText = `flag of ${countryName}`
-  return (
-    <div>
-      <img src={flagImage} alt={altText}/>
-    </div>
-  )
-}
-
+import weatherService from './services/weather'
+import CountrySearch from './components/CountrySearch'
+import TooMany from './components/TooMany'
+import CountryList from './components/CountryList'
+import CapitalArea from './components/CapitalArea'
+import Languages from './components/Languages'
+import Flag from './components/Flag'
+ 
 const CountryInfo = ({ countries, search }) => {
   //updates list of country names filtered by search
   const countryCommonNames = countries.map(country => country.name.common) 
   console.log(countryCommonNames)
-  const filteredCountryNames = countryCommonNames.filter(commonName => commonName.toLowerCase().includes(search.toLowerCase()))
-  console.log('Filtered countries:',filteredCountryNames)
-  console.log('Search input:',search)
+  console.log('Search input:',search) 
 
-  if (filteredCountryNames.length>=10) {
-    return(<TooMany />)
+  //state for weather daya
+  const [weather, setWeather] = useState('')
+  const [clicked, setClicked] = useState(false)
 
-  } else if (filteredCountryNames.length==1) {
+  //returns list of countries that match search
+  const filterCountries = (commonNames,search) => {
+    const filteredCountryNames = commonNames.filter(commonName => commonName.toLowerCase().includes(search.toLowerCase()))
+    return (filteredCountryNames)
+  }
+  const filteredCountryNames = filterCountries(countryCommonNames,search)
+
+  //sets clicked to country associated with clicked button
+  const handleClick = (key) => {
+    console.log('button shows,',key)
+    setClicked([key])
+  }
+
+  /*useEffect(() => {
+    weatherService
+      .getWeather(29.5,45.75)
+      .then(response => setWeather(response))
+  }, []) 
+  console.log('Weather data:', weather)*/
+  
+  if (filteredCountryNames.length >= 10) {
+    return(
+      <TooMany />
+    )
+  } else if (filteredCountryNames.length == 1 || clicked) {
+    //if clicked exists it will use that clicked country for findIndex, else use filter
+    const clickOrFilter = (filteredCountryNames,clicked) => {
+      if (clicked) {return(clicked)}
+      else {return(filteredCountryNames)}
+    }
+    const chosenCountry = clickOrFilter(filteredCountryNames,clicked)
+
     //get index of the country to find information besides name
-    const index = countryCommonNames.findIndex(name=>name==filteredCountryNames)
+    const index = countryCommonNames.findIndex(name=>name==chosenCountry)
     const indexData = countries[index]
     const languages = indexData.languages
     const flagImage = indexData.flags.png
+    //needed for weatherService
+    const latitude = indexData.latlng[0]
+    const longitude = indexData.latlng[1]
 
     console.log('filtered name:',filteredCountryNames)
     console.log('same name:',countryCommonNames[index])
     console.log('Index data:',indexData)
-    console.log('Languages:',indexData.languages)
+    console.log('Latitude:',latitude)
+    console.log('Longitude:',longitude)
 
     return (
       <div>
-        <CapitalArea indexData={indexData} countryName={filteredCountryNames}/>
+        <CapitalArea indexData={indexData} countryName={chosenCountry}/>
         <Languages languages={languages} />
         <Flag flagImage={flagImage} />
+        {/*<Weather weather={weather} /> */}
       </div>
     )
   } else {
     return(
-      <CountryList countries={filteredCountryNames} />
+      <CountryList countries={filteredCountryNames} onClick={handleClick} />
     )
-  } 
+  }
 }
 
 const App = () => {
@@ -112,9 +94,7 @@ const App = () => {
   console.log('Country data:', countries)
 
   //updates search bar from user input
-  const handleChange = (event) => {
-    setSearch(event.target.value)
-  }
+  const handleChange = (event) => setSearch(event.target.value)
 
   //displays country information when there is input in search
   if (search!='') {
