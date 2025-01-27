@@ -1,0 +1,24 @@
+{
+  "persons": [
+    {
+      "id": "024d",
+      "name": "Islam Mahkachev",
+      "number": "243-6584"
+    },
+    {
+      "id": "e481",
+      "name": "Trippie Red",
+      "number": "732-9102"
+    },
+    {
+      "id": "da49",
+      "name": "Jermaine Cole",
+      "number": "234-9843"
+    },
+    {
+      "id": "c8de",
+      "name": "Dave Davies",
+      "number": "1738"
+    }
+  ]
+}
